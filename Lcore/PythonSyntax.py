@@ -50,11 +50,11 @@ class PythonSyntax(QSyntaxHighlighter):
 												   'IsADirectoryError', 'NotADirectoryError', 'InterruptedError', 'PermissionError', 'ProcessLookupError', 'TimeoutError',
 												   'open', 'quit', 'exit', 'copyright', 'credits', 'license', 'help', '_'] if bi not in keyword.kwlist]),
 									color=Qt.GlobalColor.blue))
-		# const string
-		self.rule.append(SyntaxRule(reg=r'"[^"]*?"' + r"|'[^']*?'", color=Qt.GlobalColor.darkGreen))
 		# const number
 		self.rule.append(
 			SyntaxRule(reg=r'\b[0]+\b' + r'|\b[1-9]+\d+\b' + r'|\b0[bB][01]+\b' + r'|\b0[oO][0-7]+\b' + r'|\b0[xX][\da-fA-F]+\b', color=Qt.GlobalColor.darkCyan))
+		# const string
+		self.rule.append(SyntaxRule(reg=r'"[^"]*?"' + r"|'[^']*?'", color=Qt.GlobalColor.darkGreen))
 		# comment
 		self.rule.append(SyntaxRule(reg=r'^\s*#.*', color=Qt.GlobalColor.gray, italic=True))
 
