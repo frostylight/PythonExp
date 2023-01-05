@@ -126,7 +126,7 @@ class PopMenu(QMenu):
 			QMessageBox.warning(self, "", f"路径名不合法\n{e}")
 
 	def rename(self) -> None:
-		text, ret = self._input.getText(self, "重命名", "", QLineEdit.EchoMode.Normal)
+		text, ret = self._input.getText(self, f"重命名{self._path.name}", "输入新名字", QLineEdit.EchoMode.Normal)
 		if not ret or not text:
 			return
 		path = self._path.with_name(text)
@@ -141,7 +141,7 @@ class PopMenu(QMenu):
 			QMessageBox.warning(self, "", f"路径名不合法\n{e}")
 
 	def remove(self) -> None:
-		ret = QMessageBox.warning(self, "", f"确实要永久性删除此文件{'夹' if self._path.is_dir() else ''}吗？\n{self._path}",
+		ret = QMessageBox.warning(self, "删除文件", f"确实要永久性删除此文件{'夹' if self._path.is_dir() else ''}吗？\n{self._path}",
 								  QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 		if ret == QMessageBox.StandardButton.No:
 			return
