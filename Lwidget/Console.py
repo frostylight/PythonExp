@@ -10,6 +10,7 @@ class Console(QTextEdit):
 
 	def __init__(self, parent: QWidget | None = None) -> None:
 		super().__init__(parent)
+		self.setAcceptRichText(False)
 		self.process: QProcess | None = None
 		self.disable()
 		self.cursorPositionChanged.connect(self.cursorCheck)
