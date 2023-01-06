@@ -19,9 +19,9 @@ class Ui_Main(QMainWindow):
 		super().closeEvent(ev)
 
 	def console_run(self) -> None:
+		self.editor.checkSave()
 		if self.editor.path:
-			self.editor.checkSave()
-			self.console.excute(self.editor.path)
+			self.console.execute(self.editor.path)
 
 	def console_switch(self, state: bool) -> None:
 		self.menu_run_run.setEnabled(not state)

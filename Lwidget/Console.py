@@ -66,7 +66,7 @@ class Console(QTextEdit):
 		self.append(f"Process exit with code {exitCode}\nstatus : {exitStatus}\n")
 		self.disable()
 
-	def excute(self, path: Path) -> None:
+	def execute(self, path: Path) -> None:
 		self.clear()
 		self.setReadOnly(False)
 		self.stateChange.emit(True)
