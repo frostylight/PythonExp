@@ -14,6 +14,7 @@ class Editor(QTextEdit):
 		self.setAcceptDrops(True)
 		self.setFont(QFont('Consola', pointSize=15))
 		self.setTabWidth(tabWidth)
+		self.setAcceptRichText(False)
 
 		self.ctrlPressed = False
 		self.path: Path | None = None
