@@ -100,7 +100,8 @@ class Editor(QTextEdit):
 
 	def checkSave(self) -> bool:
 		if self.document().isModified():
-			ret = QMessageBox.warning(self, self.path.name, "文件已被修改。保存修改内容？", QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel)
+			ret = QMessageBox.warning(self, self.path.name if self.path is not None else "", "文件已被修改。保存修改内容？",
+									  QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel)
 			if ret == QMessageBox.StandardButton.Save:
 				return self.save()
 			else:
