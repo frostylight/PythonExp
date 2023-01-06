@@ -29,10 +29,14 @@ class Ui_Main(QMainWindow):
 
 	def openFile(self) -> None:
 		filename, _ = QFileDialog.getOpenFileName(self, caption="打开文件", filter='*.py')
+		if not filename.strip():
+			return
 		self.editor.setPath(Path(filename))
 
 	def openDir(self) -> None:
 		path = QFileDialog.getExistingDirectory(caption="打开文件夹")
+		if not path.strip():
+			return
 		self.dirView.setPath(Path(path))
 
 	def setup(self) -> None:
