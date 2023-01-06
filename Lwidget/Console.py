@@ -63,7 +63,7 @@ class Console(QTextEdit):
 			self.append(data)
 
 	def process_finish(self, exitCode: int, exitStatus: QProcess.ExitStatus) -> None:
-		self.append(f"Process exit with code {exitCode}\nstatus : {exitStatus}\n")
+		self.append(f"Process exit with code {exitCode}\nStatus : {exitStatus}\n")
 		self.disable()
 
 	def execute(self, path: Path) -> None:
@@ -75,7 +75,7 @@ class Console(QTextEdit):
 		else:
 			self.process = QProcess()
 		self.process.start("python", ["-X utf8", str(path)])
-		self.append(f"Excuting {path}\n")
+		self.append(f"python -X utf8 {path}\n")
 		self.process.finished.connect(self.process_finish)
 		self.process.readyReadStandardOutput.connect(self.process_stdout)
 		self.process.readyReadStandardError.connect(self.process_stdout)
