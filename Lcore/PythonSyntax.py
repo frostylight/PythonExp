@@ -8,6 +8,10 @@ from PySide6.QtWidgets import QApplication
 
 
 class SyntaxRule:
+	"""
+	Syntax highlighter rule and format
+	"""
+
 	def __init__(self, rule: QRegularExpression | None = None, reg: str | None = None, fmt: QTextCharFormat | None = None, color: Qt.GlobalColor | QColor | None = None,
 				 italic: bool = False) -> None:
 		self.rule: QRegularExpression = rule if rule is not None else QRegularExpression()
@@ -27,13 +31,15 @@ class PythonSyntax(QSyntaxHighlighter):
 		self.setup_rule()
 
 	def setup_rule(self) -> None:
-		#builtin
-		self.rule.append(SyntaxRule(reg="|".join([r'\b{}\b'.format(bi) for bi in builtins.__dir__()]), color=Qt.GlobalColor.blue))
+		#builtins
+		self.rule.append(SyntaxRule(reg="|".join([r'\b(?<!\.){}\b'.format(bi) for bi in builtins.__dir__()]), color=Qt.GlobalColor.blue))
 		# keyword
-		self.rule.append(SyntaxRule(reg="|".join([r'\b{}\b'.format(kw) for kw in keyword.kwlist] + [r'\bself\b']), color=Qt.GlobalColor.darkMagenta))
+		self.rule.append(SyntaxRule(reg="|".join([r'\b(?<!\.){}\b'.format(kw) for kw in keyword.kwlist] + [r'\bself\b']), color=Qt.GlobalColor.darkMagenta))
+		# magic function
+		self.rule.append(SyntaxRule(reg=r"\b__[a-zA-Z][\da-zA-Z]*__", color=Qt.GlobalColor.magenta))
 		# const number
 		self.rule.append(
-			SyntaxRule(reg=r'\b[0]+\b' + r'|\b[1-9]+\d+\b' + r'|\b0[bB][01]+\b' + r'|\b0[oO][0-7]+\b' + r'|\b0[xX][\da-fA-F]+\b', color=Qt.GlobalColor.darkCyan))
+			SyntaxRule(reg="|".join([r'\b[0]+\b', r'\b[1-9]+\d+\b', r'\b0[bB][01]+\b', r'\b0[oO][0-7]+\b', r'\b0[xX][\da-fA-F]+\b']), color=Qt.GlobalColor.darkCyan))
 		# const string
 		self.rule.append(SyntaxRule(reg=r'"[^"]*?"' + r"|'[^']*?'", color=Qt.GlobalColor.darkGreen))
 		# comment
