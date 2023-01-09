@@ -14,6 +14,16 @@ class SyntaxRule:
 
 	def __init__(self, rule: QRegularExpression | None = None, reg: str | None = None, fmt: QTextCharFormat | None = None, color: Qt.GlobalColor | QColor | None = None,
 				 italic: bool = False) -> None:
+		"""
+		reg >(cover) rule
+		color / italic >(cover) format
+
+		:param rule: regular expression
+		:param reg: regular expression string
+		:param fmt: format of text
+		:param color: color of text
+		:param italic: whether the text should be italic
+		"""
 		self.rule: QRegularExpression = rule if rule is not None else QRegularExpression()
 		self.format: QTextCharFormat = fmt if fmt is not None else QTextCharFormat()
 		if reg is not None:
@@ -25,6 +35,10 @@ class SyntaxRule:
 
 
 class PythonSyntax(QSyntaxHighlighter):
+	"""
+	Highlighter of Python code
+	"""
+
 	def __init__(self, parent: QTextDocument | None = None) -> None:
 		super().__init__(parent)
 		self.rule: list[SyntaxRule] = []
