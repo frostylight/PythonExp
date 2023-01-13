@@ -4,8 +4,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
 from PySide6.QtWidgets import QFileDialog, QGridLayout, QMainWindow, QMenu, QSplitter, QWidget
 
-from Lwidget import Console, DirView, Editor
-from Lcore import PythonSyntax
+from src.Lwidget import Console, DirView, Editor
+from src.Lcore import PythonSyntax
 
 
 class Ui_Main(QMainWindow):
