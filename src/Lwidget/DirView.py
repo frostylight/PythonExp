@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QModelIndex, QObject, QPersistentModelIndex, QPoint, QRegularExpression, QSortFilterProxyModel, Qt, Signal
+from PySide6.QtCore import QModelIndex, QObject, QPersistentModelIndex, QPoint, QRegularExpression, QSortFilterProxyModel, Qt, Signal, SignalInstance
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QFileSystemModel, QLineEdit, QMenu, QMessageBox, QTreeView, QWidget, QInputDialog
 
@@ -152,7 +152,7 @@ class PopMenu(QMenu):
 
 
 class DirView(QTreeView):
-	selectFile = Signal(Path)
+	selectFile: SignalInstance = Signal(Path)
 
 	def __init__(self, parent: QWidget | None = None) -> None:
 		super().__init__(parent)

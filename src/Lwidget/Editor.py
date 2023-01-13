@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, SignalInstance
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QFocusEvent, QFont, QFontMetricsF, QKeyEvent, QWheelEvent, QSyntaxHighlighter
 from PySide6.QtWidgets import QApplication, QFileDialog, QTextEdit, QWidget, QMessageBox
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 class Editor(QTextEdit):
-	pathChange = Signal(str)
+	pathChange: SignalInstance = Signal(str)
 
 	def __init__(self, parent: QWidget | None = None, tabWidth: int = 4, highlighter: QSyntaxHighlighter | None = None) -> None:
 		super().__init__(parent)

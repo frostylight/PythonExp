@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from PySide6.QtCore import QProcess, Qt, Signal
+from PySide6.QtCore import QProcess, Qt, Signal, SignalInstance
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import QTextEdit, QWidget
 
 
 class Console(QTextEdit):
-	stateChange = Signal(bool)
+	stateChange: SignalInstance = Signal(bool)
 
 	def __init__(self, parent: QWidget | None = None) -> None:
 		super().__init__(parent)
