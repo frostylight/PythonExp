@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QTabWidget, QWidget, QTabBar
-from PySide6.QtCore import SignalInstance
+from PySide6.QtCore import QEvent, SignalInstance
 
 
 class TabBar(QTabBar):
