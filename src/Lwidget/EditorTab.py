@@ -1,12 +1,13 @@
 from PySide6.QtCore import Qt, Signal, SignalInstance
 from PySide6.QtGui import QCloseEvent, QFocusEvent, QFont, QFontMetricsF, QKeyEvent, QShowEvent, QWheelEvent
-from PySide6.QtWidgets import QTextEdit, QWidget, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QTextEdit, QWidget, QMessageBox
 from pathlib import Path
 
 
 class EditorTab(QTextEdit):
-	# TODO save & saveAs & checkSave
-	def __init__(self, parent: QWidget | None, path: Path) -> None:
+	titleChanged: SignalInstance = Signal(QWidget, str)
+
+	def __init__(self, parent: QWidget | None, path: Path | None) -> None:
 		super().__init__(parent)
 		self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 		self.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
@@ -18,16 +19,67 @@ class EditorTab(QTextEdit):
 
 		self.__path = path
 		self.__ctrlPressed = False
-		self.__load()
+		if self.__path:
+			self.__load()
+
+	@property
+	def __title(self) -> str:
+		# TODO custom style
+		return self.__path.name if self.__path is not None else ""
+
+	@property
+	def path(self) -> Path:
+		return self.__path
+
+	def refreshTitle(self) -> None:
+		self.titleChanged.emit(self, self.__title)
+
+	def __save(self) -> None:
+		# TODO custom | detect encoding
+		self.__path.write_text(self.toPlainText(), encoding="utf-8")
+		self.document().setModified(False)
+
+	def saveAs(self) -> bool:
+		filename, _ = QFileDialog.getSaveFileName(self, "保存为")
+		if not filename:
+			return False
+		if self.__path is None:
+			self.__path = Path(filename)
+			self.__save()
+			self.refreshTitle()
+		else:
+			path = Path(filename)
+			path.write_text(self.toPlainText(), encoding="utf-8")
+		return True
+
+	def save(self) -> bool:
+		if self.__path is None:
+			return self.saveAs()
+		self.__save()
+		return True
+
+	def checkSave(self) -> bool:
+		if not self.document().isModified():
+			return True
+		ret = QMessageBox.warning(self, self.__title, "文件修改未保存。保存修改内容？",
+								  QMessageBox.StandardButton.Save | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+		if ret == QMessageBox.StandardButton.Save:
+			return self.save()
+		elif ret == QMessageBox.StandardButton.No:
+			return True
+		return False
 
 	def __load(self) -> None:
-		# TODO encoding & lazy
+		# TODO custom encoding & lazy loading
 		self.setText(self.__path.read_text(encoding="utf-8"))
+		self.document().setModified(False)
 
 	def reload(self) -> None:
+		if self.__path is None or self.document().isModified():
+			return
 		if self.__path.is_file():
 			self.__load()
-		elif not self.document().isModified():
+		else:
 			result = QMessageBox.warning(self, "保留文件", f"文件 {self.__path.resolve()} 不在了。\n是否在编辑器里保留它？",
 										 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 			if result == QMessageBox.StandardButton.Yes:
@@ -65,5 +117,7 @@ class EditorTab(QTextEdit):
 			super().wheelEvent(event)
 
 	def closeEvent(self, event: QCloseEvent) -> None:
-		# TODO check saved
-		super().closeEvent(event)
+		if not self.checkSave():
+			event.ignore()
+		else:
+			super().closeEvent(event)
