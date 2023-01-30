@@ -12,6 +12,7 @@ class TabBar(QTabBar):
 
 class TabManager(QTabWidget):
 	tabCloseRequested: SignalInstance
+	currentChanged: SignalInstance
 
 	def __init__(self, parent: QWidget = None) -> None:
 		super().__init__(parent)

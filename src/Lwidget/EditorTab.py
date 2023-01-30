@@ -23,7 +23,7 @@ class EditorTab(QTextEdit):
 			self.__load()
 
 	@property
-	def __title(self) -> str:
+	def title(self) -> str:
 		# TODO custom style
 		return self.__path.name if self.__path is not None else ""
 
@@ -32,7 +32,7 @@ class EditorTab(QTextEdit):
 		return self.__path
 
 	def refreshTitle(self) -> None:
-		self.titleChanged.emit(self, self.__title)
+		self.titleChanged.emit(self, self.title)
 
 	def __save(self) -> None:
 		# TODO custom | detect encoding
@@ -61,7 +61,7 @@ class EditorTab(QTextEdit):
 	def checkSave(self) -> bool:
 		if not self.document().isModified():
 			return True
-		ret = QMessageBox.warning(self, self.__title, "文件修改未保存。保存修改内容？",
+		ret = QMessageBox.warning(self, self.title, "文件修改未保存。保存修改内容？",
 								  QMessageBox.StandardButton.Save | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
 		if ret == QMessageBox.StandardButton.Save:
 			return self.save()

@@ -151,8 +151,10 @@ class PopMenu(QMenu):
 			QMessageBox.warning(self, "", f"无法访问\n{e}")
 
 
-class DirView(QTreeView):
+class Explorer(QTreeView):
 	selectFile: SignalInstance = Signal(Path)
+	clicked: SignalInstance
+	customContextMenuRequested: SignalInstance
 
 	def __init__(self, parent: QWidget | None = None) -> None:
 		super().__init__(parent)

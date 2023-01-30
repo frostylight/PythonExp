@@ -1,119 +1,155 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, SignalInstance
 from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
 from PySide6.QtWidgets import QFileDialog, QGridLayout, QMainWindow, QMenu, QSplitter, QWidget
 
-from src.Lwidget import Console, DirView, Editor
-from src.Lcore import PythonSyntax
+from src.Lwidget import Console, Explorer, Editor, TabManager, EditorTab
+
+
+class EditorTabManager(TabManager):
+	def __init__(self, parent: QWidget | None) -> None:
+		super().__init__(parent)
+
+	def addTab(self, tab: EditorTab, text: str = None) -> int:
+		if text is None:
+			text = tab.title
+		return super().addTab(tab, text)
+
+	def widget(self, index: int) -> EditorTab:
+		ret = super().widget(index)
+		if isinstance(ret, EditorTab):  # always True
+			return ret
+		else:
+			raise KeyError()
+
+	def currentWidget(self) -> EditorTab:
+		ret = super().currentWidget()
+		if isinstance(ret, EditorTab):  # always True
+			return ret
+		else:
+			raise KeyError()
 
 
 class Ui_Main(QMainWindow):
-	def __init__(self) -> None:
-		super().__init__()
-		self.setup()
+	def __init__(self, parent: QWidget = None) -> None:
+		super().__init__(parent)
+		self.setWindowTitle("Code")
+		self.resize(1080, 720)
+		self.__build_main()
+		self.__build_menu()
+		self.__build_connect()
 
-	def closeEvent(self, ev: QCloseEvent) -> None:
-		self.console.stop()
-		self.editor.checkSave()
-		super().closeEvent(ev)
+	def __build_main(self) -> None:
+		centralWidget = QWidget(self)
+		layout = QGridLayout(centralWidget)
+		centralWidget.setLayout(layout)
 
-	def console_run(self) -> None:
-		self.editor.checkSave()
-		if self.editor.path:
-			self.console.execute(self.editor.path)
+		self._splitter_horizon = QSplitter(Qt.Orientation.Horizontal, centralWidget)
+		self._splitter_vertical = QSplitter(Qt.Orientation.Vertical, self._splitter_horizon)
+		self.explorer = Explorer(self._splitter_horizon)
+		self.tabManager = EditorTabManager(self._splitter_vertical)
+		self.console = Console(self._splitter_vertical)
 
-	def console_switch(self, state: bool) -> None:
-		self.menu_run_run.setEnabled(not state)
-		self.menu_run_stop.setEnabled(state)
+		self._splitter_horizon.addWidget(self.explorer)
+		self._splitter_horizon.addWidget(self._splitter_vertical)
+		self._splitter_vertical.addWidget(self.tabManager)
+		self._splitter_vertical.addWidget(self.console)
+		self.explorer.setMinimumSize(200, 0)
+		self.console.setMinimumSize(0, 150)
+		self._splitter_vertical.setSizes([720, 150])
+		self._splitter_horizon.setSizes([200, 1080])
+		sizePolicy = self._splitter_vertical.sizePolicy()
+		sizePolicy.setHorizontalStretch(1)
+		self._splitter_vertical.setSizePolicy(sizePolicy)
+		layout.addWidget(self._splitter_horizon)
+		self.setCentralWidget(centralWidget)
+
+	def __build_menu(self) -> None:
+		Key = QKeySequence.StandardKey
+		self._action_openFile = QAction(text="打开文件", triggered=self.openFile, shortcut=Key.Open)
+		self._action_openDir = QAction(text="打开文件夹", triggered=self.openDir, shortcut="Ctrl+Alt+K")
+		self._action_saveFile = QAction(text="保存", triggered=self.saveFile, shortcut=Key.Save)
+		self._action_saveAs = QAction(text="另存为...", triggered=self.saveFileAs, shortcut=Key.SaveAs)
+		self._action_copy = QAction(text="复制", triggered=self.copyText, shortcut=Key.Copy)
+		self._action_cut = QAction(text="剪切", triggered=self.cutText, shortcut=Key.Cut)
+		self._action_paste = QAction(text="粘贴", triggered=self.pasteText, shortcut=Key.Paste)
+		self._action_run = QAction(text="运行", triggered=self.runCode, shortcut="Shift+F")
+		self._action_stop = QAction(text="停止", triggered=self.console.stop, shortcut="Alt+Shift+F")
+
+		menuBar = self.menuBar()
+
+		self._menu_file = QMenu("文件", menuBar)
+
+		self._menu_file.addAction(self._action_openFile)
+		self._menu_file.addAction(self._action_openDir)
+		self._menu_file.addSeparator()
+		self._menu_file.addAction(self._action_saveFile)
+		self._menu_file.addAction(self._action_saveAs)
+		menuBar.addAction(self._menu_file.menuAction())
+
+		self._menu_edit = QMenu("编辑", menuBar)
+		self._menu_edit.addAction(self._action_copy)
+		self._menu_edit.addAction(self._action_cut)
+		self._menu_edit.addAction(self._action_paste)
+		menuBar.addAction(self._menu_edit.menuAction())
+
+		self._menu_run = QMenu("运行", menuBar)
+		self._menu_run.addAction(self._action_run)
+		self._menu_run.addAction(self._action_stop)
+		menuBar.addAction(self._menu_run.menuAction())
+
+		self.__consoleStateChange(False)
+
+	def __build_connect(self) -> None:
+		self.explorer.selectFile.connect(self.__addTab)
+		self.console.stateChange.connect(self.__consoleStateChange)
+
+	def __addTab(self, path: Path | None) -> None:
+		for i in range(self.tabManager.count()):
+			if self.tabManager.widget(i).path.samefile(path):
+				self.tabManager.setCurrentIndex(i)
+				return
+		tab = EditorTab(self.tabManager, path)
+		self.tabManager.setCurrentIndex(self.tabManager.addTab(tab))
+
+	def __consoleStateChange(self, state: bool) -> None:
+		self._action_run.setEnabled(not state)
+		self._action_stop.setEnabled(state)
 
 	def openFile(self) -> None:
 		filename, _ = QFileDialog.getOpenFileName(self, caption="打开文件", filter='*.py')
-		if not filename.strip():
+		if not filename:
 			return
-		self.editor.setPath(Path(filename))
+		self.__addTab(Path(filename))
 
 	def openDir(self) -> None:
 		path = QFileDialog.getExistingDirectory(caption="打开文件夹")
-		if not path.strip():
+		if not path:
 			return
-		self.dirView.setPath(Path(path))
+		self.explorer.setPath(Path(path))
 
-	def setup(self) -> None:
-		self.setWindowTitle("Code")
-		self.resize(1080, 720)
-		self.setCentralWidget(QWidget(self))
+	def saveFile(self) -> None:
+		self.tabManager.currentWidget().save()
 
-		self.setup_win()
-		self.setup_menu()
-		self.setup_statusbar()
-		self.setup_connect()
+	def saveFileAs(self) -> None:
+		self.tabManager.currentWidget().saveAs()
 
-	def setup_win(self) -> None:
-		centralwidget = self.centralWidget()
-		centralwidget.setLayout(QGridLayout(centralwidget))
-		layout = centralwidget.layout()
+	def copyText(self) -> None:
+		self.tabManager.currentWidget().copy()
 
-		self.splitter_h = QSplitter(Qt.Horizontal, centralwidget)
-		self.dirView = DirView(self.splitter_h)
-		self.splitter_v = QSplitter(Qt.Vertical, self.splitter_h)
-		self.editor = Editor(self.splitter_v)
-		self.console = Console(self.splitter_v)
+	def cutText(self) -> None:
+		self.tabManager.currentWidget().cut()
 
-		self.dirView.setMinimumSize(200, 0)
-		self.editor.setHighlighter(PythonSyntax())
-		self.console.setMinimumSize(0, 150)
-		self.splitter_v.setSizes([720, 150])
-		self.splitter_h.setSizes([200, 1080])
-		sizePolicy = self.splitter_v.sizePolicy()
-		sizePolicy.setHorizontalStretch(1)
-		self.splitter_v.setSizePolicy(sizePolicy)
+	def pasteText(self) -> None:
+		self.tabManager.currentWidget().paste()
 
-		layout.addWidget(self.splitter_h)
+	def runCode(self) -> None:
+		self.console.execute(self.tabManager.currentWidget().path)
 
-	def setup_menu(self) -> None:
-		self.menu_file_openfile = QAction(text="打开文件", triggered=self.openFile, shortcut=QKeySequence.StandardKey.Open)
-		self.menu_file_opendir = QAction(text="打开文件夹", triggered=self.openDir, shortcut="Ctrl+Alt+K")
-		self.menu_file_save = QAction(text="保存", triggered=self.editor.save, shortcut=QKeySequence.StandardKey.Save)
-		self.menu_file_saveAs = QAction(text="另存为", triggered=self.editor.saveAs, shortcut=QKeySequence.StandardKey.SaveAs)
-		self.menu_edit_copy = QAction(text="复制", triggered=self.editor.copy, shortcut=QKeySequence.StandardKey.Copy)
-		self.menu_edit_cut = QAction(text="剪切", triggered=self.editor.cut, shortcut=QKeySequence.StandardKey.Cut)
-		self.menu_edit_paste = QAction(text="粘贴", triggered=self.editor.paste, shortcut=QKeySequence.StandardKey.Paste)
-		self.menu_run_run = QAction(text="运行", triggered=self.console_run, shortcut="Shift+F")
-		self.menu_run_stop = QAction(text="停止", triggered=self.console.stop, shortcut="Alt+Shift+F")
-
-		menubar = self.menuBar()
-		self.menu_file = QMenu(title="文件", parent=menubar)
-		self.menu_edit = QMenu(title="编辑", parent=menubar)
-		self.menu_run = QMenu(title="运行", parent=menubar)
-		menubar.addAction(self.menu_file.menuAction())
-		menubar.addAction(self.menu_edit.menuAction())
-		menubar.addAction(self.menu_run.menuAction())
-		self.setMenuBar(menubar)
-
-		self.menu_file.addAction(self.menu_file_openfile)
-		self.menu_file.addAction(self.menu_file_opendir)
-		self.menu_file.addSeparator()
-		self.menu_file.addAction(self.menu_file_save)
-		self.menu_file.addAction(self.menu_file_saveAs)
-
-		self.menu_edit.addAction(self.menu_edit_copy)
-		self.menu_edit.addAction(self.menu_edit_cut)
-		self.menu_edit.addAction(self.menu_edit_paste)
-
-		self.menu_run.addAction(self.menu_run_run)
-		self.menu_run.addAction(self.menu_run_stop)
-
-	def setup_statusbar(self) -> None:
-		# self.status_encoding = QLabel(text="UTF-8")
-		#
-		# statusbar = self.statusBar()
-		# statusbar.setEnabled(True)
-		# statusbar.addPermanentWidget(self.status_encoding)
-		pass
-
-	def setup_connect(self) -> None:
-		self.menu_run_stop.setEnabled(False)
-		self.console.stateChange.connect(self.console_switch)
-		self.dirView.selectFile.connect(self.editor.setPath)
-		self.editor.pathChange.connect(self.setWindowTitle)
+	def closeEvent(self, event: QCloseEvent) -> None:
+		self.console.stop()
+		if not self.tabManager.close():
+			event.ignore()
+			return
+		super().closeEvent(event)

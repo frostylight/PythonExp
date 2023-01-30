@@ -1,19 +1,27 @@
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt, Signal, SignalInstance
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import QInputMethodEvent, QKeyEvent, QTextCursor
 from PySide6.QtWidgets import QTextEdit, QWidget
 
 
 class Console(QTextEdit):
 	stateChange: SignalInstance = Signal(bool)
+	cursorPositionChanged: SignalInstance
 
 	def __init__(self, parent: QWidget | None = None) -> None:
 		super().__init__(parent)
 		self.setAcceptRichText(False)
 		self.process: QProcess | None = None
-		self.disable()
+		self.__stop()
 		self.cursorPositionChanged.connect(self.cursorCheck)
+		self.__readOnly = False
+
+	def append(self, text: str) -> None:
+		textCursor = self.textCursor()
+		textCursor.movePosition(QTextCursor.MoveOperation.End)
+		self.setTextCursor(textCursor)
+		self.insertPlainText(text)
 
 	def cursorCheck(self) -> None:
 		"""
@@ -21,29 +29,39 @@ class Console(QTextEdit):
 		"""
 		cursor = self.textCursor()
 		if cursor.block().blockNumber() == self.document().lastBlock().blockNumber():
-			self.setReadOnly(False)
+			self.__readOnly = False
 		else:
-			self.setReadOnly(True)
+			self.__readOnly = True
 
-	def disable(self) -> None:
-		# TODO to be polished
+	def __begin(self) -> None:
+		self.clear()
+		self.setReadOnly(False)
+		self.stateChange.emit(True)
+
+	def __stop(self) -> None:
 		self.setReadOnly(True)
 		if self.process is not None:
 			self.process.close()
 			self.process = None
 		self.stateChange.emit(False)
 
+	def inputMethodEvent(self, event: QInputMethodEvent) -> None:
+		if self.__readOnly:
+			event.ignore()
+			return
+		super().inputMethodEvent(event)
+
 	def keyPressEvent(self, ev: QKeyEvent) -> None:
-		if ev.key() == Qt.Key.Key_Backspace:  # unable to del line
-			if self.textCursor().atBlockStart():
-				ev.ignore()
-			else:
-				super().keyPressEvent(ev)
-		elif ev.key() == Qt.Key.Key_Enter or ev.key() == Qt.Key.Key_Return:  #send last line to process
-			super().keyPressEvent(ev)
+		print(f"keyPressed {ev.key()} {ev.text()}")
+		if self.__readOnly and ev.text():
+			ev.ignore()
+			return
+		if ev.key() == Qt.Key.Key_Backspace and (self.__readOnly or self.textCursor().atBlockStart()):  # unable to del line
+			ev.ignore()
+			return
+		super().keyPressEvent(ev)
+		if ev.key() == Qt.Key.Key_Enter or ev.key() == Qt.Key.Key_Return:  #send last line to process
 			self.process_stdin(self.document().toPlainText().splitlines(keepends=True)[-1])
-		else:
-			super().keyPressEvent(ev)
 
 	def process_stdin(self, stdin: str) -> None:
 		"""
@@ -62,31 +80,28 @@ class Console(QTextEdit):
 		if self.process is None:
 			return
 		dataBytes = bytes(self.process.readAll())
-		#print("stdout:", dataBytes)
 		try:
 			data = dataBytes.decode("utf-8")
-			self.insertPlainText(data)
+			self.append(data)
 		except UnicodeDecodeError:
 			data = dataBytes.decode()
-			self.insertPlainText(data)
+			self.append(data)
 
 	def process_finish(self, exitCode: int, exitStatus: QProcess.ExitStatus) -> None:
-		self.insertPlainText(f"Process exit with code {exitCode}\nStatus : {exitStatus}\n")
-		self.disable()
+		self.append(f"Process exit with code {exitCode}\nStatus : {exitStatus}\n")
+		self.__stop()
 
 	def execute(self, path: Path) -> None:
-		self.clear()
-		self.setReadOnly(False)
-		self.stateChange.emit(True)
+		self.__begin()
 		if self.process is not None:
 			self.process.close()
 		else:
 			self.process = QProcess()
 		self.process.start("python", ["-X utf8", str(path)])
-		self.insertPlainText(f"python -X utf8 {path}\n")
+		self.append(f"python -X utf8 {path}\n")
 		self.process.finished.connect(self.process_finish)
 		self.process.readyReadStandardOutput.connect(self.process_stdout)
 		self.process.readyReadStandardError.connect(self.process_stdout)
 
 	def stop(self) -> None:
-		self.disable()
+		self.__stop()
