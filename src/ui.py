@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, SignalInstance
 from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
 from PySide6.QtWidgets import QFileDialog, QGridLayout, QMainWindow, QMenu, QSplitter, QWidget
 
-from src.Lwidget import Console, Explorer, Editor, TabManager, EditorTab
+from src.Lwidget import Console, Explorer, TabManager, EditorTab
 
 
 class EditorTabManager(TabManager):
