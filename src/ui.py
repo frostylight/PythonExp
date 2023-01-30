@@ -18,19 +18,19 @@ class EditorTabManager(TabManager):
 		PythonSyntax(tab.document())
 		return super().addTab(tab, text)
 
-	def widget(self, index: int) -> EditorTab:
+	def widget(self, index: int) -> EditorTab | None:
 		ret = super().widget(index)
 		if isinstance(ret, EditorTab):  # always True
 			return ret
 		else:
-			raise KeyError()
+			return None
 
-	def currentWidget(self) -> EditorTab:
+	def currentWidget(self) -> EditorTab | None:
 		ret = super().currentWidget()
 		if isinstance(ret, EditorTab):  # always True
 			return ret
 		else:
-			raise KeyError()
+			return None
 
 
 class Ui_Main(QMainWindow):
@@ -101,11 +101,13 @@ class Ui_Main(QMainWindow):
 		self._menu_run.addAction(self._action_stop)
 		menuBar.addAction(self._menu_run.menuAction())
 
-		self.__consoleStateChange(False)
+		self.__consoleStateChanged(False)
+		self.__tabCountChanged(0)
 
 	def __build_connect(self) -> None:
 		self.explorer.selectFile.connect(self.__addTab)
-		self.console.stateChange.connect(self.__consoleStateChange)
+		self.console.stateChanged.connect(self.__consoleStateChanged)
+		self.tabManager.countChanged.connect(self.__tabCountChanged)
 
 	def __addTab(self, path: Path | None) -> None:
 		for i in range(self.tabManager.count()):
@@ -115,9 +117,14 @@ class Ui_Main(QMainWindow):
 		tab = EditorTab(self.tabManager, path)
 		self.tabManager.setCurrentIndex(self.tabManager.addTab(tab))
 
-	def __consoleStateChange(self, state: bool) -> None:
+	def __consoleStateChanged(self, state: bool) -> None:
 		self._action_run.setEnabled(not state)
 		self._action_stop.setEnabled(state)
+
+	def __tabCountChanged(self, count: int) -> None:
+		self._action_saveFile.setEnabled(count > 0)
+		self._action_saveAs.setEnabled(count > 0)
+		self._menu_edit.setEnabled(count > 0)
 
 	def openFile(self) -> None:
 		filename, _ = QFileDialog.getOpenFileName(self, caption="打开文件", filter='*.py')
@@ -147,7 +154,9 @@ class Ui_Main(QMainWindow):
 		self.tabManager.currentWidget().paste()
 
 	def runCode(self) -> None:
-		self.console.execute(self.tabManager.currentWidget().path)
+		tab = self.tabManager.currentWidget()
+		if tab is not None:
+			self.console.execute(tab.path)
 
 	def closeEvent(self, event: QCloseEvent) -> None:
 		self.console.stop()

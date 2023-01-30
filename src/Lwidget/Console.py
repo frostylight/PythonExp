@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QTextEdit, QWidget
 
 
 class Console(QTextEdit):
-	stateChange: SignalInstance = Signal(bool)
+	stateChanged: SignalInstance = Signal(bool)
 	cursorPositionChanged: SignalInstance
 
 	def __init__(self, parent: QWidget | None = None) -> None:
@@ -36,14 +36,14 @@ class Console(QTextEdit):
 	def __begin(self) -> None:
 		self.clear()
 		self.setReadOnly(False)
-		self.stateChange.emit(True)
+		self.stateChanged.emit(True)
 
 	def __stop(self) -> None:
 		self.setReadOnly(True)
 		if self.process is not None:
 			self.process.close()
 			self.process = None
-		self.stateChange.emit(False)
+		self.stateChanged.emit(False)
 
 	def inputMethodEvent(self, event: QInputMethodEvent) -> None:
 		if self.__readOnly:
