@@ -5,6 +5,7 @@ from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
 from PySide6.QtWidgets import QFileDialog, QGridLayout, QMainWindow, QMenu, QSplitter, QWidget
 
 from src.Lwidget import Console, Explorer, TabManager, EditorTab
+from src.Lcore import PythonSyntax
 
 
 class EditorTabManager(TabManager):
@@ -14,6 +15,7 @@ class EditorTabManager(TabManager):
 	def addTab(self, tab: EditorTab, text: str = None) -> int:
 		if text is None:
 			text = tab.title
+		PythonSyntax(tab.document())
 		return super().addTab(tab, text)
 
 	def widget(self, index: int) -> EditorTab:
