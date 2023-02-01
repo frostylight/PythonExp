@@ -46,7 +46,7 @@ class PythonSyntax(QSyntaxHighlighter):
 
 	def setup_rule(self) -> None:
 		#builtins
-		self.rule.append(SyntaxRule(reg="|".join([r'\b(?<!\.){}\b'.format(bi) for bi in builtins.__dir__()]), color=Qt.GlobalColor.blue))
+		self.rule.append(SyntaxRule(reg="|".join([r'\b(?<!\.){}\b'.format(bi) for bi in dir(builtins)]), color=Qt.GlobalColor.blue))
 		# keyword
 		self.rule.append(SyntaxRule(reg="|".join([r'\b(?<!\.){}\b'.format(kw) for kw in keyword.kwlist] + [r'\bself\b']), color=Qt.GlobalColor.darkMagenta))
 		# magic function
